@@ -1,0 +1,946 @@
+--[================================================================]--
+--  kawaz1k.win v96 [Delta iOS Optimized & Error-Free Edition]     --
+--[================================================================]--
+
+local RS = game:GetService("RunService")
+local PL = game:GetService("Players")
+local LP = PL.LocalPlayer
+local CAM = workspace.CurrentCamera
+local LG = game:GetService("Lighting")
+local CG = game:GetService("CoreGui")
+local RPS = game:GetService("ReplicatedStorage")
+local HS = game:GetService("HttpService")
+local UIS = game:GetService("UserInputService")
+local VU = game:GetService("VirtualUser")
+local TS = game:GetService("TweenService")
+local TPS = game:GetService("TeleportService")
+local StarterGui = game:GetService("StarterGui")
+
+local function L(m) warn("[kawaz1k] " .. tostring(m)) end
+
+-- Уведомление в игре (безопасное для iOS)
+local function Notify(title, text, dur)
+    pcall(function()
+        StarterGui:SetCore("SendNotification", {Title = title, Text = text, Duration = dur or 3})
+    end)
+end
+
+-- Система ключей
+local K = {
+    {c="1804", a=true, h=0},
+    {c="week", a=false, h=360},
+    {c="kawaz1k", a=false, h=24},
+    {c="kilo", a=false, h=48},
+    {c="lol", a=false, h=120},
+    {c="sixseven", a=false, h=7},
+    {c="python3", a=false, h=72},
+    {c="sixnine", a=false, h=144}
+}
+local SF = "kawaz1k_keys.json"
+getgenv().kawaz_KeyExpiry = getgenv().kawaz_KeyExpiry or {}
+pcall(function()
+    if readfile and isfile and isfile(SF) then
+        local t = readfile(SF)
+        if t and t ~= "" then
+            local o, p = pcall(function() return HS:JSONDecode(t) end)
+            if o and type(p) == "table" then
+                for k, v in pairs(p.expiry or {}) do
+                    if getgenv().kawaz_KeyExpiry[k] == nil then getgenv().kawaz_KeyExpiry[k] = v end
+                end
+            end
+        end
+    end
+end)
+local function SK() pcall(function() if writefile then writefile(SF, HS:JSONEncode({expiry = getgenv().kawaz_KeyExpiry or {}})) end end) end
+local function FK(c) for _, k in ipairs(K) do if k.c == c then return k end end return nil end
+local function IK(c)
+    local k = FK(c)
+    if not k then return false, nil end
+    getgenv().kawaz_KeyExpiry = getgenv().kawaz_KeyExpiry or {}
+    if k.a then
+        getgenv().kawaz_KeyExpiry[c] = os.time() + 100 * 365 * 86400
+        SK()
+        return true, k
+    end
+    local e = getgenv().kawaz_KeyExpiry[c]
+    if not e then
+        local n = os.time()
+        e = n + k.h * 3600
+        getgenv().kawaz_KeyExpiry[c] = e
+        SK()
+    end
+    if os.time() >= e then return false, k end
+    return true, k
+end
+
+-- Загрузка WindUI с защитой от сбоев
+local W
+do
+    local u = {
+        "https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/main_example.lua",
+        "https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"
+    }
+    local c
+    for _, x in ipairs(u) do
+        local o, r = pcall(function() return game:HttpGet(x) end)
+        if o and r and #r > 1000 then c = r; break end
+    end
+    if c then
+        local ld = loadstring or load
+        local ch = ld(c, "WindUI")
+        local o, res = pcall(ch)
+        if o and res then W = res end
+    end
+end
+
+for _, g in ipairs(CG:GetChildren()) do if g.Name:lower():find("kawaz") then g:Destroy() end end
+
+-- Переменные состояний
+local CM = "Main"
+local AB = {Enabled = false, Smoothness = 50, FOVRadius = 150, VisibleCheck = true, TargetPart = "Head", ShowFOV = false, HitboxEnabled = false, HitboxSize = 4}
+local AA = false
+local ASP = {Enabled = false, Resolution = 0.65}
+local BH = {Enabled = false, Speed = 16}
+local SP = {Enabled = false, Speed = 50}
+local JP = {Enabled = false, Power = 50}
+local FL = {Enabled = false, Speed = 50}
+local NC = {Enabled = false}
+local AFK = {Enabled = false}
+local FM = {Enabled = false, Speed = 12, SafeDistance = 25, UseMoveTo = false}
+local AG = {Enabled = false}
+local GE = {Enabled = false}
+local VE = {Enabled = false}
+local AM = {Enabled = false, Distance = 40, Speed = 25}
+local AE = {Enabled = false}
+local AFL = {Enabled = false}
+local AR = {Enabled = false}
+local IJ = {Enabled = false}
+local FC = {Enabled = false}
+local PD = {Enabled = false}
+local WM = {Style = 1}
+local SV = {}
+local NF = {Enabled = false}
+local KA = {Enabled = false, Range = 15, Speed = 0.1}
+local AP = {Enabled = false, Range = 15}
+local NE = {Enabled = false}
+local AV = {Enabled = false}
+local AIM = {Enabled = false, Speed = 20, Axis = "Y", Mode = "Постоянный"}
+local ACS = "Not Active"
+
+local TB = {Enabled = false}
+local ACK = {Enabled = false, Delay = 0.1}
+local SPN = {Enabled = false, Speed = 50}
+
+local CN = {"coin","candy","money","cash","shell","gem","present","candycorn","sweet","treat","halloween","sugar","lollipop","chocolate"}
+
+local CKC, WIN, FL2 = nil, nil, false
+local RC = {}
+local RCL = {Murderer = Color3.fromRGB(255,60,60), Sheriff = Color3.fromRGB(60,140,255), Hero = Color3.fromRGB(255,215,0), Innocent = Color3.fromRGB(80,220,120), Unknown = Color3.fromRGB(200,200,200)}
+
+local function RR()
+    pcall(function()
+        local g = RPS:FindFirstChild("GetPlayerData", true)
+        if g then
+            local o, d = pcall(function() return g:InvokeServer() end)
+            if o and type(d) == "table" then RC = d end
+        end
+    end)
+end
+task.spawn(function() while true do if CM == "MM2" and CKC then RR() end; task.wait(1) end end)
+
+local function GR(p)
+    if CM ~= "MM2" then return "Unknown" end
+    local d = RC[p.Name]
+    if not d then return "Unknown" end
+    return d.Role or "Unknown"
+end
+local VR = {Murderer = true, Innocent = true, Sheriff = true, Hero = true}
+local function IR(p) return VR[GR(p)] == true end
+local function W2S(p) local s, o = CAM:WorldToViewportPoint(p); if not o then return nil end; return Vector2.new(s.X, s.Y) end
+local function GV(t)
+    if not AB.VisibleCheck then return true end
+    local c = LP.Character
+    if not c or not c:FindFirstChild("Head") then return false end
+    local r = RaycastParams.new()
+    r.FilterType = Enum.RaycastFilterType.Exclude
+    r.FilterDescendantsInstances = {c}
+    r.IgnoreWater = true
+    local x = workspace:Raycast(c.Head.Position, t.Position - c.Head.Position, r)
+    return not x or x.Instance:IsDescendantOf(t.Parent)
+end
+
+-- KEY UI (Дизайн под мобильные устройства)
+local KG = Instance.new("ScreenGui"); KG.Name = "kawaz1k_KeyUI"; KG.ResetOnSpawn = false; KG.IgnoreGuiInset = true; KG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling; KG.DisplayOrder = 9999; KG.Parent = CG
+local KF = Instance.new("Frame", KG); KF.AnchorPoint = Vector2.new(.5,.5); KF.Size = UDim2.fromOffset(340,240); KF.Position = UDim2.new(.5,0,.5,0); KF.BackgroundColor3 = Color3.fromHex("#0F1926"); KF.BorderSizePixel = 0; KF.ZIndex = 10000
+Instance.new("UICorner", KF).CornerRadius = UDim.new(0,14)
+local KS = Instance.new("UIStroke", KF); KS.Color = Color3.fromHex("#00AAFF"); KS.Thickness = 1.5
+local KT = Instance.new("TextLabel", KF); KT.Size = UDim2.new(1,-32,0,30); KT.Position = UDim2.fromOffset(16,14); KT.BackgroundTransparency = 1; KT.Text = "kawaz1k.win v96 (iOS)"; KT.TextColor3 = Color3.fromHex("#3CC8FF"); KT.TextSize = 22; KT.Font = Enum.Font.GothamBlack; KT.TextXAlignment = Enum.TextXAlignment.Left
+local KB = Instance.new("TextBox", KF); KB.Size = UDim2.new(1,-32,0,36); KB.Position = UDim2.fromOffset(16,92); KB.BackgroundColor3 = Color3.fromHex("#0F1926"); KB.BorderSizePixel = 0; KB.PlaceholderText = "введите invite code"; KB.TextColor3 = Color3.fromHex("#E6F0FA"); KB.TextSize = 14; KB.Font = Enum.Font.Code; KB.TextXAlignment = Enum.TextXAlignment.Left; KB.ClearTextOnFocus = false
+Instance.new("UICorner", KB).CornerRadius = UDim.new(0,8)
+local SL = Instance.new("TextLabel", KF); SL.Size = UDim2.new(1,-32,0,16); SL.Position = UDim2.fromOffset(16,136); SL.BackgroundTransparency = 1; SL.TextColor3 = Color3.fromHex("#FF5A5A"); SL.TextSize = 11; SL.Font = Enum.Font.Code; SL.TextXAlignment = Enum.TextXAlignment.Left
+local LB = Instance.new("TextButton", KF); LB.Size = UDim2.new(1,-32,0,40); LB.Position = UDim2.fromOffset(16,164); LB.BackgroundColor3 = Color3.fromHex("#00AAFF"); LB.Text = "ВОЙТИ"; LB.TextColor3 = Color3.fromHex("#0A0F18"); LB.TextSize = 14; LB.Font = Enum.Font.GothamBlack; LB.BorderSizePixel = 0
+Instance.new("UICorner", LB).CornerRadius = UDim.new(0,8)
+
+-- WATERMARK
+local WG = Instance.new("ScreenGui"); WG.Name = "kawaz1k_Watermark"; WG.ResetOnSpawn = false; WG.IgnoreGuiInset = true; WG.DisplayOrder = 9999; WG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling; WG.Parent = CG
+local WB = Instance.new("TextButton", WG); WB.Size = UDim2.fromOffset(300,36); WB.Position = UDim2.new(1,-308,0,8); WB.BackgroundColor3 = Color3.fromHex("#0F1926"); WB.BackgroundTransparency = .05; WB.BorderSizePixel = 0; WB.Text = ""; WB.AutoButtonColor = false; WB.Visible = false; WB.ZIndex = 10; WB.Active = false; WB.Parent = WG
+Instance.new("UICorner", WB).CornerRadius = UDim.new(0,8)
+local WS = Instance.new("UIStroke", WB); WS.Color = Color3.fromHex("#00AAFF"); WS.Thickness = 1; WS.Transparency = .3
+local WG2 = Instance.new("UIGradient", WB); WG2.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromHex("#0F1926")),ColorSequenceKeypoint.new(1,Color3.fromHex("#0A121C"))}); WG2.Rotation = 45
+
+local WT = Instance.new("TextLabel", WB); WT.Size = UDim2.new(1,-110,1,0); WT.Position = UDim2.fromOffset(12,0); WT.BackgroundTransparency = 1; WT.Text = ""; WT.TextColor3 = Color3.fromHex("#E6F0FA"); WT.TextSize = 12; WT.Font = Enum.Font.GothamMedium; WT.TextXAlignment = Enum.TextXAlignment.Left; WT.ZIndex = 11
+
+local TG = Instance.new("ImageButton", WB); TG.Size = UDim2.fromOffset(18,18); TG.Position = UDim2.new(1,-70,0,9); TG.BackgroundTransparency = 1; TG.Image = "rbxassetid://13520098761"; TG.ImageColor3 = Color3.fromHex("#00AAFF"); TG.ZIndex = 12
+TG.MouseButton1Click:Connect(function() pcall(function() if setclipboard then setclipboard("@kawaz1k") end; local o = TG.ImageColor3; TG.ImageColor3 = Color3.fromHex("#30FF6A"); task.wait(.5); TG.ImageColor3 = o end) end)
+
+local DB = Instance.new("TextButton", WG); DB.Size = UDim2.fromOffset(28,28); DB.Position = UDim2.new(1,-32,0,12); DB.BackgroundTransparency = 1; DB.Text = "⋮"; DB.TextColor3 = Color3.fromHex("#00AAFF"); DB.TextSize = 22; DB.Font = Enum.Font.GothamBlack; DB.AutoButtonColor = false; DB.Active = true; DB.ZIndex = 200; DB.Parent = WG
+
+-- PROFILE MENU
+local PH = 380
+local PM = Instance.new("Frame", WG); PM.Size = UDim2.fromOffset(300, PH); PM.Position = UDim2.new(1,-308,0,48); PM.BackgroundColor3 = Color3.fromHex("#0F1926"); PM.BackgroundTransparency = .05; PM.BorderSizePixel = 0; PM.Visible = false; PM.ZIndex = 50; PM.ClipsDescendants = false; PM.Active = false
+Instance.new("UICorner", PM).CornerRadius = UDim.new(0,10)
+local PMS = Instance.new("UIStroke", PM); PMS.Color = Color3.fromHex("#00AAFF"); PMS.Thickness = 1.5; PMS.Transparency = .2
+local PMG = Instance.new("UIGradient", PM); PMG.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromHex("#0F1926")),ColorSequenceKeypoint.new(1,Color3.fromHex("#0A121C"))}); PMG.Rotation = 45
+local PMH = Instance.new("Frame", PM); PMH.Size = UDim2.new(1,0,0,42); PMH.BackgroundTransparency = 1; PMH.ZIndex = 51
+local PI = Instance.new("ImageLabel", PMH); PI.Size = UDim2.fromOffset(24,24); PI.Position = UDim2.fromOffset(12,9); PI.BackgroundTransparency = 1; PI.Image = "rbxassetid://10709799771"; PI.ImageColor3 = Color3.fromHex("#00AAFF"); PI.ZIndex = 52
+local PT = Instance.new("TextLabel", PMH); PT.Size = UDim2.new(1,-50,1,0); PT.Position = UDim2.fromOffset(42,0); PT.BackgroundTransparency = 1; PT.Text = "ПРОФИЛЬ"; PT.TextColor3 = Color3.fromHex("#3CC8FF"); PT.TextSize = 14; PT.Font = Enum.Font.GothamBold; PT.TextXAlignment = Enum.TextXAlignment.Left; PT.ZIndex = 52
+local PSEP = Instance.new("Frame", PM); PSEP.Size = UDim2.new(1,-24,0,1); PSEP.Position = UDim2.fromOffset(12,42); PSEP.BackgroundColor3 = Color3.fromHex("#00AAFF"); PSEP.BackgroundTransparency = .7; PSEP.BorderSizePixel = 0; PSEP.ZIndex = 51
+local PMI = Instance.new("TextLabel", PM); PMI.Size = UDim2.new(1,-24,0,120); PMI.Position = UDim2.fromOffset(12,50); PMI.BackgroundTransparency = 1; PMI.TextColor3 = Color3.fromHex("#E6F0FA"); PMI.TextSize = 11; PMI.Font = Enum.Font.GothamMedium; PMI.TextXAlignment = Enum.TextXAlignment.Left; PMI.TextYAlignment = Enum.TextYAlignment.Top; PMI.TextWrapped = true; PMI.Text = "Загрузка..."; PMI.ZIndex = 51
+local ACL = Instance.new("TextLabel", PM); ACL.Size = UDim2.new(1,-24,0,20); ACL.Position = UDim2.fromOffset(12,178); ACL.BackgroundTransparency = 1; ACL.TextColor3 = Color3.fromHex("#FF5A5A"); ACL.TextSize = 12; ACL.Font = Enum.Font.GothamBold; ACL.TextXAlignment = Enum.TextXAlignment.Left; ACL.Text = "Anti-Cheat: " .. ACS; ACL.ZIndex = 51
+
+local function MAB(t,c,x,y,s)
+    local b = Instance.new("TextButton", PM)
+    b.Size = UDim2.fromOffset(88,26); b.Position = UDim2.fromOffset(x,y); b.BackgroundColor3 = c; b.BackgroundTransparency = .1; b.BorderSizePixel = 0; b.Text = t; b.TextColor3 = Color3.fromHex("#0A0F18"); b.TextSize = 11; b.Font = Enum.Font.GothamBold; b.AutoButtonColor = false; b.ZIndex = 52
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+    local st = Instance.new("UIStroke", b); st.Color = c; st.Thickness = 1; st.Transparency = .5
+    b.MouseButton1Click:Connect(function()
+        ACS = s
+        ACL.Text = "Anti-Cheat: " .. ACS
+        if ACS == "Active" then ACL.TextColor3 = Color3.fromHex("#30FF6A")
+        elseif ACS == "Not Active" then ACL.TextColor3 = Color3.fromHex("#FF5A5A")
+        else ACL.TextColor3 = Color3.fromHex("#FFD700") end
+        Notify("Статус AC", "Изменен на: " .. ACS, 2)
+    end)
+    return b
+end
+MAB("Active", Color3.fromHex("#30FF6A"), 12, 204, "Active")
+MAB("Not Active", Color3.fromHex("#FF5A5A"), 106, 204, "Not Active")
+MAB("Active-Super", Color3.fromHex("#FFD700"), 12, 236, "Active-Super")
+
+local FI = Instance.new("TextLabel", PM); FI.Size = UDim2.new(1,-24,0,40); FI.Position = UDim2.fromOffset(12,274); FI.BackgroundTransparency = 1; FI.TextColor3 = Color3.fromHex("#FFD700"); FI.TextSize = 10; FI.Font = Enum.Font.GothamMedium; FI.TextXAlignment = Enum.TextXAlignment.Left; FI.TextWrapped = true; FI.Text = "Farm: --"; FI.ZIndex = 51
+local AI2 = Instance.new("TextLabel", PM); AI2.Size = UDim2.new(1,-24,0,40); AI2.Position = UDim2.fromOffset(12,320); AI2.BackgroundTransparency = 1; AI2.TextColor3 = Color3.fromHex("#FF5A5A"); AI2.TextSize = 10; AI2.Font = Enum.Font.GothamMedium; AI2.TextXAlignment = Enum.TextXAlignment.Left; AI2.TextWrapped = true; AI2.Text = "AntiAim: выкл"; AI2.ZIndex = 51
+
+local MO = false
+local function TPM()
+    MO = not MO
+    if MO then
+        PM.Visible = true; PM.Position = UDim2.new(1,-308,0,24); PM.BackgroundTransparency = .5
+        pcall(function() TS:Create(PM, TweenInfo.new(.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(1,-308,0,48), BackgroundTransparency = .05}):Play() end)
+    else
+        pcall(function()
+            local t = TS:Create(PM, TweenInfo.new(.15, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Position = UDim2.new(1,-308,0,24), BackgroundTransparency = 1})
+            t:Play()
+            t.Completed:Connect(function() if not MO then PM.Visible = false end end)
+        end)
+    end
+end
+DB.MouseButton1Click:Connect(TPM)
+WB.MouseButton1Click:Connect(function()
+    if FL2 then return end; FL2 = true
+    pcall(function() loadstring(game:HttpGet("https://scriptblox.com/raw/Universal-Script-Fe-fly-Script-9712"))() end)
+end)
+
+task.spawn(function()
+    while WG.Parent do
+        pcall(function()
+            local p = math.floor(LP:GetNetworkPing() * 1000)
+            PMI.Text = string.format("Ник: %s\nUserID: %d\nPing: %d ms\nРежим: %s\nAnti-Cheat: %s\nСкрипт: v96 (iOS)", LP.Name, LP.UserId, p, CM, ACS)
+            if WM.Style == 1 then
+                WT.Text = string.format("kawaz1k.win | %dms | tg: @kawaz1k", p)
+                WT.TextColor3 = Color3.fromHex("#E6F0FA"); WS.Color = Color3.fromHex("#00AAFF"); WS.Transparency = .3
+            elseif WM.Style == 2 then
+                WT.Text = string.format("kawaz1k | %dms", p)
+                WT.TextColor3 = Color3.fromHex("#AAAAAA"); WS.Color = Color3.fromHex("#333333"); WS.Transparency = .5
+            elseif WM.Style == 3 then
+                WT.Text = string.format("★ kawaz1k.win ★ | %dms", p)
+                WT.TextColor3 = Color3.fromHex("#FFD700"); WS.Color = Color3.fromHex("#FFD700"); WS.Transparency = .2
+            else
+                WB.Visible = false; if MO then TPM() end
+            end
+            if WM.Style ~= 4 then WB.Visible = true end
+        end)
+        task.wait(1)
+    end
+end)
+
+-- Создание UI Меню
+local function CMUI()
+    if not W then 
+        Notify("Ошибка", "Библиотека WindUI не загружена!", 4)
+        return 
+    end
+
+    local o = pcall(function()
+        WIN = W:CreateWindow({
+            Title = "kawaz1k.win v96 (iOS)",
+            Folder = "kawaz1kwin",
+            NewElements = true,
+            HideSearchBar = false,
+            OpenButton = {Title = "Open UI", Enabled = true, Draggable = true, OnlyMobile = true, Scale = .6, Color = ColorSequence.new(Color3.fromHex("#30FF6A"), Color3.fromHex("#e7ff2f"))}
+        })
+    end)
+    if not o then L("CreateWindow FAILED"); return end
+
+    -- Функция-помощник для создания вкладок (исправлено отсутствие MT)
+    local function MT(title, icon, colorHex)
+        local tab = nil
+        pcall(function()
+            tab = WIN:Tab({Title = title, Icon = icon})
+        end)
+        return tab
+    end
+
+    local ES = {ESP = false, Box = false, Name = false, Health = false, Dist = false, Chams = false}
+    local MO2 = Instance.new("ScreenGui"); MO2.Name = "kawaz1k_MobileOverlay"; MO2.Parent = CG; MO2.IgnoreGuiInset = true; MO2.ResetOnSpawn = false
+    local FF = Instance.new("Frame", MO2); FF.BackgroundTransparency = 1; FF.BorderSizePixel = 0; FF.Visible = false; FF.AnchorPoint = Vector2.new(.5,.5); FF.ZIndex = 1
+    Instance.new("UICorner", FF).CornerRadius = UDim.new(1,0)
+    Instance.new("UIStroke", FF).Color = Color3.fromRGB(48,255,106)
+    
+    local AIMB = Instance.new("TextButton", MO2); AIMB.Size = UDim2.fromOffset(55,55); AIMB.Position = UDim2.new(.85,0,.6,0); AIMB.BackgroundColor3 = Color3.fromRGB(30,30,30); AIMB.BorderColor3 = Color3.fromRGB(255,75,75); AIMB.BorderSizePixel = 2; AIMB.Text = "A"; AIMB.TextColor3 = Color3.fromRGB(255,75,75); AIMB.TextSize = 22; AIMB.Font = Enum.Font.SourceSansBold; AIMB.Draggable = true; AIMB.Visible = false; AIMB.ZIndex = 5
+    Instance.new("UICorner", AIMB).CornerRadius = UDim.new(1,0)
+    
+    UIS.InputBegan:Connect(function(i, g)
+        if g then return end
+        if i.UserInputType == Enum.UserInputType.MouseButton2 and AB.Enabled then
+            AA = not AA
+            if AIMB.Visible then AIMB.BackgroundColor3 = AA and Color3.fromRGB(48,255,106) or Color3.fromRGB(30,30,30) end
+        end
+    end)
+    AIMB.MouseButton1Click:Connect(function() AA = not AA; AIMB.BackgroundColor3 = AA and Color3.fromRGB(48,255,106) or Color3.fromRGB(30,30,30) end)
+
+    RS.Stepped:Connect(function()
+        local c = LP.Character
+        if c and (NC.Enabled or FM.Enabled or AM.Enabled) then
+            for _, p in ipairs(c:GetDescendants()) do if p:IsA("BasePart") and p.CanCollide then p.CanCollide = false end end
+        end
+        if SPN.Enabled and c then
+            local hrp = c:FindFirstChild("HumanoidRootPart")
+            if hrp then hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(SPN.Speed), 0) end
+        end
+    end)
+
+    -- TRIGGERBOT
+    task.spawn(function()
+        while true do
+            task.wait(0.05)
+            if TB.Enabled then
+                pcall(function()
+                    local mouse = LP:GetMouse()
+                    local target = mouse.Target
+                    if target and target.Parent then
+                        local p = PL:GetPlayerFromCharacter(target.Parent)
+                        if p and p ~= LP then
+                            VU:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                            task.wait(0.05)
+                            VU:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+
+    -- AUTOCLICKER
+    task.spawn(function()
+        while true do
+            task.wait(ACK.Delay)
+            if ACK.Enabled then
+                pcall(function()
+                    VU:Button1Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                    task.wait(0.02)
+                    VU:Button1Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                end)
+            end
+        end
+    end)
+
+    -- ANTI-AIM
+    local AAC = nil; local JIT = 1
+    local function SAA() if AAC then AAC:Disconnect(); AAC = nil end end
+    local function STAA()
+        SAA()
+        AAC = RS.Heartbeat:Connect(function()
+            if not AIM.Enabled then return end
+            if ACS == "Active-Super" then AI2.Text = "AntiAim: заблокирован Active-Super"; return end
+            local c = LP.Character
+            if not c then return end
+            local h = c:FindFirstChild("HumanoidRootPart")
+            if not h then return end
+            if AIM.Mode == "Постоянный" then
+                local d = (AIM.Axis == "X") and -1 or 1
+                local ang = (AIM.Axis == "Y") and CFrame.Angles(0, math.rad(d * AIM.Speed), 0) or
+                            (AIM.Axis == "X") and CFrame.Angles(math.rad(d * AIM.Speed), 0, 0) or
+                            (AIM.Axis == "Z") and CFrame.Angles(0, 0, math.rad(d * AIM.Speed)) or
+                            CFrame.Angles(math.rad(d * AIM.Speed), math.rad(d * AIM.Speed), math.rad(d * AIM.Speed))
+                pcall(function() h.CFrame = h.CFrame * ang end)
+            elseif AIM.Mode == "Джиттер" then
+                JIT = -JIT
+                pcall(function() h.CFrame = h.CFrame * CFrame.Angles(0, math.rad(JIT * AIM.Speed * 2), 0) end)
+            elseif AIM.Mode == "Случайный" then
+                pcall(function() h.CFrame = h.CFrame * CFrame.Angles(0, math.rad(math.random(-180, 180)), 0) end)
+            end
+            AI2.Text = "AntiAim: " .. AIM.Mode .. " | " .. AIM.Axis .. " | " .. AIM.Speed
+        end)
+    end
+
+    -- AUTOFARM
+    local FV, FB, FA, FT2, FP, FC2, FCW, FLT, LFC = nil, nil, false, nil, nil, {time=0,target=nil}, {time=0,target=nil}, 0, 0
+    local function DFM() if FV then FV:Destroy(); FV = nil end; if FB then FB:Destroy(); FB = nil end end
+    local function SPF(h, on)
+        if on then h:ChangeState(Enum.HumanoidStateType.Physics); h.PlatformStand = true; h.AutoRotate = false
+        else h:ChangeState(Enum.HumanoidStateType.GettingUp); h.PlatformStand = false; h.AutoRotate = true end
+    end
+    local function SFM() DFM(); local c = LP.Character; local h = c and c:FindFirstChild("Humanoid"); if h then SPF(h, false); if h.WalkSpeed < 16 then h.WalkSpeed = 16 end end; FA = false; FT2 = nil; FP = 0; FC2.time = 0; FC2.target = nil; FCW.time = 0; FCW.target = nil end
+    local function SI(f, h, b, bd)
+        for _, o in ipairs(f:GetDescendants()) do
+            if o:IsA("BasePart") then
+                local n = o.Name:lower(); local m = false
+                for _, cn in ipairs(CN) do if n:find(cn) then m = true; break end end
+                if m and o:FindFirstChildOfClass("TouchTransmitter") then
+                    local d = (h.Position - o.Position).Magnitude
+                    if d < bd then bd = d; b = o end
+                end
+            end
+        end
+        return b, bd
+    end
+    local function SC(h)
+        local n = os.clock()
+        if n - FC2.time >= .5 then
+            FC2.time = n; local b, bd = nil, math.huge; local cnt = 0
+            local mp = workspace:FindFirstChild("Map")
+            if mp then
+                local cur = mp:FindFirstChild("Currency")
+                if cur then b, bd = SI(cur, h, b, bd); cnt = #cur:GetChildren() end
+                if not b then b, bd = SI(mp, h, b, bd) end
+            end
+            FC2.target = b; LFC = cnt
+        end
+        if FC2.target and FC2.target.Parent then return FC2.target end
+        if n - FCW.time >= 2 then
+            FCW.time = n; local b, bd = nil, math.huge
+            b, bd = SI(workspace, h, b, bd); FCW.target = b
+        end
+        if FCW.target and FCW.target.Parent then return FCW.target end
+        return nil
+    end
+
+    task.spawn(function()
+        while true do
+            task.wait(.05)
+            pcall(function()
+                if not FM.Enabled and not AG.Enabled then if FA then SFM() end; return end
+                local c = LP.Character; local h = c and c:FindFirstChild("HumanoidRootPart"); local hu = c and c:FindFirstChild("Humanoid")
+                if not h or not hu or hu.Health <= 0 then if FA then SFM() end; return end
+                if CM == "MM2" and not IR(LP) then if FA then SFM() end; return end
+                local mp2, md = nil, math.huge
+                if CM == "MM2" and FM.SafeDistance > 0 then
+                    for _, p in ipairs(PL:GetPlayers()) do
+                        if p ~= LP and p.Character then
+                            if GR(p) == "Murderer" and p.Character:FindFirstChild("HumanoidRootPart") then
+                                mp2 = p.Character.HumanoidRootPart.Position; md = (h.Position - mp2).Magnitude; break
+                            end
+                        end
+                    end
+                end
+                local dg = mp2 and md < FM.SafeDistance
+                local tp = nil
+                if not dg then tp = SC(h) end
+                if PM.Visible then
+                    if tp then FI.Text = string.format("Farm: %s | dist: %d", tp.Name, math.floor((h.Position - tp.Position).Magnitude))
+                    else FI.Text = string.format("Farm: нет цели | монет: %d", LFC) end
+                end
+                if not tp and AG.Enabled and CM == "MM2" then
+                    for _, o in ipairs(workspace:GetChildren()) do
+                        if o.Name == "GunDrop" then
+                            local g = o:IsA("BasePart") and o or (o:IsA("Model") and (o.PrimaryPart or o:FindFirstChildWhichIsA("BasePart")))
+                            if g then tp = g; break end
+                        end
+                    end
+                end
+                local hg = tp and tp.Parent ~= nil
+                if not hg and not dg then
+                    if FA then
+                        FT2 = FT2 or os.clock()
+                        if os.clock() - FT2 > 3 then SFM() end
+                        if FV then FV.Velocity = Vector3.new(0, 0, 0) end
+                    end
+                    return
+                end
+                FT2 = nil
+                if not FA then FA = true; FP = h.Position end
+                if not FM.UseMoveTo and not hu.PlatformStand then SPF(hu, true) end
+                if FM.UseMoveTo then DFM()
+                else
+                    if FV and FV.Parent ~= h then DFM() end
+                    if not FV then FV = Instance.new("BodyVelocity"); FV.MaxForce = Vector3.new(1e5, 1e5, 1e5); FV.P = 5000; FV.Parent = h end
+                    if not FB then FB = Instance.new("BodyGyro"); FB.MaxTorque = Vector3.new(1e5, 1e5, 1e5); FB.P = 5000; FB.D = 300; FB.Parent = h end
+                end
+                local ft = c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso")
+                if ft then
+                    local f1 = ft:FindFirstChild("kawaz_FlyBV"); if f1 then f1:Destroy() end
+                    local f2 = ft:FindFirstChild("kawaz_FlyBG"); if f2 then f2:Destroy() end
+                end
+                local function MV(pos)
+                    if FM.UseMoveTo then hu.PlatformStand = false; hu.WalkSpeed = math.max(FM.Speed, 16); hu:MoveTo(pos)
+                    else
+                        local df = pos - h.Position
+                        if df.Magnitude > .001 then FV.Velocity = df.Unit * FM.Speed else FV.Velocity = Vector3.new(FM.Speed, 0, 0) end
+                        FB.CFrame = CFrame.lookAt(h.Position, pos)
+                    end
+                end
+                if dg then
+                    if md > .5 then local aw = (h.Position - mp2).Unit; MV(h.Position + aw * 50) end
+                    return
+                end
+                MV(tp.Position)
+                if FP then
+                    local mv = (h.Position - FP).Magnitude
+                    if mv < .5 then FC2.time = FC2.time + 1 else FC2.time = 0 end
+                    if FC2.time > 40 then
+                        if FV then FV.Velocity = Vector3.new(0, 0, 0) end
+                        hu.PlatformStand = false; hu.WalkSpeed = math.max(FM.Speed, 16); hu:MoveTo(tp.Position); task.wait(2); FC2.time = 0
+                    end
+                end
+                FP = h.Position
+                local dtt = (h.Position - tp.Position).Magnitude
+                if dtt < 8 and os.clock() - FLT > .5 then
+                    FLT = os.clock()
+                    pcall(function()
+                        if firetouchinterest then firetouchinterest(h, tp, 0); task.wait(.05); firetouchinterest(h, tp, 1) end
+                    end)
+                    FC2.time = 0; FCW.time = 0
+                end
+            end)
+        end
+    end)
+
+    -- FLEE
+    local FVB, FBG, FB2 = nil, nil, false
+    local function SFL()
+        if FVB then FVB:Destroy(); FVB = nil end; if FBG then FBG:Destroy(); FBG = nil end
+        local c = LP.Character; local h = c and c:FindFirstChild("Humanoid")
+        if h then h.PlatformStand = false; h.AutoRotate = true; if h.WalkSpeed < 16 then h.WalkSpeed = 16 end end
+        FB2 = false
+    end
+    task.spawn(function()
+        while true do
+            task.wait(.1)
+            pcall(function()
+                if not AM.Enabled then if FB2 then SFL() end; return end
+                if FM.Enabled or AG.Enabled then if FB2 then SFL() end; return end
+                local c = LP.Character; local h = c and c:FindFirstChild("HumanoidRootPart"); local hu = c and c:FindFirstChild("Humanoid")
+                if not h or not hu or hu.Health <= 0 then if FB2 then SFL() end; return end
+                if CM == "MM2" and not IR(LP) then if FB2 then SFL() end; return end
+                local mp = nil
+                if CM == "MM2" then
+                    for _, p in ipairs(PL:GetPlayers()) do
+                        if p ~= LP and p.Character then
+                            if GR(p) == "Murderer" and p.Character:FindFirstChild("HumanoidRootPart") then mp = p.Character.HumanoidRootPart.Position; break end
+                        end
+                    end
+                end
+                local md = mp and (h.Position - mp).Magnitude or math.huge
+                local dg = mp and md < AM.Distance
+                if not dg then if FB2 then SFL() end; return end
+                if not FB2 then FB2 = true; hu.PlatformStand = true; hu.AutoRotate = false end
+                if not hu.PlatformStand then hu.PlatformStand = true; hu.AutoRotate = false end
+                if FVB and FVB.Parent ~= h then FVB:Destroy(); FVB = nil end
+                if FBG and FBG.Parent ~= h then FBG:Destroy(); FBG = nil end
+                if not FVB then FVB = Instance.new("BodyVelocity"); FVB.MaxForce = Vector3.new(1e5, 1e5, 1e5); FVB.P = 5000; FVB.Parent = h end
+                if not FBG then FBG = Instance.new("BodyGyro"); FBG.MaxTorque = Vector3.new(1e5, 1e5, 1e5); FBG.P = 5000; FBG.D = 300; FBG.Parent = h end
+                if md > .5 then
+                    local aw = (h.Position - mp).Unit
+                    FVB.Velocity = aw * AM.Speed
+                    FBG.CFrame = CFrame.lookAt(h.Position, h.Position + aw)
+                end
+            end)
+        end
+    end)
+
+    -- KILLAURA
+    local LK = 0
+    task.spawn(function()
+        while true do
+            task.wait(.1)
+            if KA.Enabled then
+                if os.clock() - LK >= KA.Speed then
+                    pcall(function()
+                        local c = LP.Character; local h = c and c:FindFirstChild("HumanoidRootPart")
+                        if h then
+                            for _, p in ipairs(PL:GetPlayers()) do
+                                if p ~= LP and p.Character then
+                                    local ph = p.Character:FindFirstChild("HumanoidRootPart")
+                                    if ph then
+                                        local d = (h.Position - ph.Position).Magnitude
+                                        if d < KA.Range and firetouchinterest then
+                                            firetouchinterest(h, ph, 0); firetouchinterest(h, ph, 1)
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                    LK = os.clock()
+                end
+            end
+        end
+    end)
+
+    -- AUTO PARRY
+    task.spawn(function()
+        while true do
+            task.wait(.2)
+            if AP.Enabled then
+                pcall(function()
+                    local c = LP.Character; local h = c and c:FindFirstChild("HumanoidRootPart")
+                    if h then
+                        for _, p in ipairs(PL:GetPlayers()) do
+                            if p ~= LP and p.Character then
+                                local ph = p.Character:FindFirstChild("HumanoidRootPart")
+                                if ph and (h.Position - ph.Position).Magnitude < AP.Range then
+                                    local bp = LP:FindFirstChild("Backpack")
+                                    if bp then
+                                        for _, t in ipairs(bp:GetChildren()) do
+                                            if t.Name:lower():find("parry") or t.Name:lower():find("block") then
+                                                t.Parent = c; task.wait(.05)
+                                                if t:FindFirstChild("Handle") and firetouchinterest then
+                                                    firetouchinterest(t.Handle, ph, 0); firetouchinterest(t.Handle, ph, 1)
+                                                end
+                                                task.wait(.05); t.Parent = bp; break
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+        end
+    end)
+
+    -- UTILS
+    task.spawn(function()
+        while true do
+            task.wait(.5)
+            if AFL.Enabled then
+                pcall(function()
+                    local c = LP.Character
+                    if c then for _, pt in ipairs(c:GetDescendants()) do if pt:IsA("BasePart") then pt.CustomPhysicalProperties = PhysicalProperties.new(.01, 0, 0, 0, 0) end end end
+                end)
+            end
+        end
+    end)
+
+    task.spawn(function()
+        while true do
+            task.wait(1)
+            if AR.Enabled then
+                pcall(function()
+                    local c = LP.Character; local h = c and c:FindFirstChild("Humanoid")
+                    if h and h.Health <= 0 then LP:LoadCharacter() end
+                end)
+            end
+        end
+    end)
+
+    local LJ = 0
+    UIS.JumpRequest:Connect(function()
+        if IJ.Enabled and os.clock() - LJ > .1 then
+            pcall(function() local c = LP.Character; local h = c and c:FindFirstChild("Humanoid"); if h then h:ChangeState(Enum.HumanoidStateType.Jumping) end end)
+            LJ = os.clock()
+        end
+    end)
+
+    task.spawn(function()
+        while true do
+            task.wait(.5)
+            if AV.Enabled then
+                pcall(function()
+                    local c = LP.Character; local h = c and c:FindFirstChild("HumanoidRootPart")
+                    if h and h.Position.Y < -50 then
+                        local sp = workspace:FindFirstChildOfClass("SpawnLocation")
+                        if sp then h.CFrame = sp.CFrame + Vector3.new(0, 5, 0) end
+                    end
+                end)
+            end
+        end
+    end)
+
+    task.spawn(function() while true do task.wait(1); if NF.Enabled then pcall(function() LG.FogEnd = 100000; LG.FogStart = 0 end) end end end)
+    task.spawn(function() while true do task.wait(60); if AFK.Enabled then pcall(function() VU:CaptureController(); VU:ClickButton2(Vector2.new()) end) end end)
+
+    -- ESP SETUP
+    local EG = Instance.new("ScreenGui"); EG.Name = "kawaz1k_ESP"; EG.ResetOnSpawn = false; EG.IgnoreGuiInset = true; EG.Parent = CG
+    local EC = {}
+    local FG = Instance.new("ScreenGui"); FG.Name = "kawaz1k_FPS"; FG.ResetOnSpawn = false; FG.IgnoreGuiInset = true; FG.Parent = CG
+    local FLB = Instance.new("TextLabel", FG); FLB.Size = UDim2.fromOffset(100, 20); FLB.Position = UDim2.new(1, -110, 0, 40); FLB.BackgroundTransparency = 1; FLB.TextColor3 = Color3.fromRGB(0,255,0); FLB.TextSize = 14; FLB.Font = Enum.Font.Code; FLB.Text = "FPS: --"; FLB.Visible = false
+    local PG = Instance.new("ScreenGui"); PG.Name = "kawaz1k_Ping"; PG.ResetOnSpawn = false; PG.IgnoreGuiInset = true; PG.Parent = CG
+    local PLB = Instance.new("TextLabel", PG); PLB.Size = UDim2.fromOffset(100, 20); PLB.Position = UDim2.new(1, -110, 0, 62); PLB.BackgroundTransparency = 1; PLB.TextColor3 = Color3.fromRGB(0,255,0); PLB.TextSize = 14; PLB.Font = Enum.Font.Code; PLB.Text = "Ping: --"; PLB.Visible = false
+    
+    local FCN, FTM, PTC = 0, 0, 0
+    task.spawn(function()
+        task.wait(.5)
+        local function CE2(p)
+            if p == LP then return end
+            if EC[p] then pcall(function() EC[p].Box:Destroy() end); pcall(function() EC[p].HL:Destroy() end); EC[p] = nil end
+            local b = Instance.new("Frame"); b.BackgroundTransparency = 1; b.BorderSizePixel = 0; b.Visible = false; b.Parent = EG
+            Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+            local st = Instance.new("UIStroke"); st.Color = Color3.fromRGB(48,255,106); st.Thickness = 1.5; st.Parent = b
+            local n = Instance.new("TextLabel", b); n.BackgroundTransparency = 1; n.TextColor3 = Color3.new(1,1,1); n.TextStrokeTransparency = 0; n.TextSize = 12; n.Font = Enum.Font.SourceSansBold; n.Size = UDim2.new(1,0,0,14); n.Position = UDim2.new(0,0,0,-16); n.Visible = false
+            EC[p] = {Box = b, Name = n, Stroke = st}
+        end
+        for _, p in ipairs(PL:GetPlayers()) do pcall(CE2, p) end
+        PL.PlayerAdded:Connect(function(p) pcall(CE2, p) end)
+        PL.PlayerRemoving:Connect(function(p) if EC[p] then pcall(function() EC[p].Box:Destroy() end); pcall(function() EC[p].HL:Destroy() end); EC[p] = nil end end)
+    end)
+
+    RS.RenderStepped:Connect(function(dt)
+        if ASP.Enabled then CAM.CFrame = CAM.CFrame * CFrame.new(0,0,0,1,0,0,0,ASP.Resolution,0,0,0,1) end
+        local vc = Vector2.new(CAM.ViewportSize.X/2, CAM.ViewportSize.Y/2)
+        if AB.ShowFOV and AB.FOVRadius > 0 then
+            local r = ASP.Enabled and ASP.Resolution or 1
+            FF.Size = UDim2.fromOffset(AB.FOVRadius * 2 * r, AB.FOVRadius * 2); FF.Position = UDim2.fromOffset(vc.X, vc.Y); FF.Visible = true
+        else
+            FF.Visible = false
+        end
+
+        local fc = CAM.CFrame
+        if AB.Enabled and AA then
+            local cp = CAM.CFrame.Position; local b, bd = nil, math.huge
+            for _, p in ipairs(PL:GetPlayers()) do
+                if p ~= LP and p.Character then
+                    local t = CM ~= "MM2" or GR(p) == "Murderer"
+                    if t then
+                        local h = p.Character:FindFirstChild("Humanoid")
+                        if h and h.Health > 0 then
+                            local pt = p.Character:FindFirstChild((AB.TargetPart == "Head") and "Head" or "HumanoidRootPart")
+                            if pt and GV(pt) then
+                                local sp, on = CAM:WorldToViewportPoint(pt.Position)
+                                if on and (Vector2.new(sp.X, sp.Y) - vc).Magnitude <= AB.FOVRadius then
+                                    local wd = (pt.Position - cp).Magnitude
+                                    if wd < bd then bd = wd; b = pt end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            if b then fc = CAM.CFrame:Lerp(CFrame.new(cp, b.Position), math.clamp(AB.Smoothness > 0 and (1 / (1 + AB.Smoothness / 10)) or 1, .02, 1)) end
+        end
+        CAM.CFrame = fc
+
+        local c = LP.Character
+        if c then
+            local h = c:FindFirstChildOfClass("Humanoid")
+            if h then
+                if SP.Enabled and not FM.Enabled and not AM.Enabled and not AG.Enabled then h.WalkSpeed = SP.Speed end
+                if BH.Enabled and not FM.Enabled then
+                    if not SP.Enabled then h.WalkSpeed = BH.Speed end
+                    if h.MoveDirection.Magnitude > 0 then pcall(function() if h.FloorMaterial ~= Enum.Material.Air then h:ChangeState(Enum.HumanoidStateType.Jumping) end end) end
+                end
+                if JP.Enabled then h.UseJumpPower = true; h.JumpPower = JP.Power end
+            end
+            if FL.Enabled and not FM.Enabled and not AG.Enabled and not AM.Enabled and h then
+                h.PlatformStand = true; h.AutoRotate = false
+                local t = c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso") or c:FindFirstChild("HumanoidRootPart")
+                if t and not t:FindFirstChild("kawaz_FlyBV") then
+                    local bv = Instance.new("BodyVelocity"); bv.Name = "kawaz_FlyBV"; bv.MaxForce = Vector3.new(1e5, 1e5, 1e5); bv.P = 5000; bv.Parent = t
+                    local bg = Instance.new("BodyGyro"); bg.Name = "kawaz_FlyBG"; bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5); bg.P = 5000; bg.D = 300; bg.CFrame = CAM.CFrame; bg.Parent = t
+                end
+                if t and t:FindFirstChild("kawaz_FlyBV") and t:FindFirstChild("kawaz_FlyBG") then
+                    local bv = t.kawaz_FlyBV; local bg = t.kawaz_FlyBG; local d = Vector3.new(0, 0, 0)
+                    if UIS:IsKeyDown(Enum.KeyCode.W) then d = d + CAM.CFrame.LookVector end
+                    if UIS:IsKeyDown(Enum.KeyCode.S) then d = d - CAM.CFrame.LookVector end
+                    if UIS:IsKeyDown(Enum.KeyCode.A) then d = d - CAM.CFrame.RightVector end
+                    if UIS:IsKeyDown(Enum.KeyCode.D) then d = d + CAM.CFrame.RightVector end
+                    if UIS:IsKeyDown(Enum.KeyCode.Space) then d = d + Vector3.new(0, 1, 0) end
+                    if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then d = d - Vector3.new(0, 1, 0) end
+                    bv.Velocity = d.Magnitude > 0 and d.Unit * FL.Speed or Vector3.new(0, 0, 0)
+                    bg.CFrame = CAM.CFrame
+                end
+            elseif not FM.Enabled and not AG.Enabled and not AM.Enabled and h then
+                local t = c:FindFirstChild("Torso") or c:FindFirstChild("UpperTorso") or c:FindFirstChild("HumanoidRootPart")
+                if t then
+                    local f1 = t:FindFirstChild("kawaz_FlyBV"); if f1 then f1:Destroy() end
+                    local f2 = t:FindFirstChild("kawaz_FlyBG"); if f2 then f2:Destroy() end
+                    if not NC.Enabled then t.CanCollide = true end
+                end
+                if h.PlatformStand then h.PlatformStand = false end
+                if not h.AutoRotate then h.AutoRotate = true end
+            end
+        end
+
+        if AB.HitboxEnabled then
+            for _, p in ipairs(PL:GetPlayers()) do
+                if p ~= LP and p.Character then
+                    local h = p.Character:FindFirstChild("Head")
+                    if h then
+                        if not h:GetAttribute("kawazHeadSize") then h:SetAttribute("kawazHeadSize", h.Size); h:SetAttribute("kawazHeadTrans", h.Transparency) end
+                        h.Size = Vector3.new(AB.HitboxSize, AB.HitboxSize, AB.HitboxSize); h.Transparency = .5
+                    end
+                end
+            end
+        else
+            for _, p in ipairs(PL:GetPlayers()) do
+                if p ~= LP and p.Character then
+                    local h = p.Character:FindFirstChild("Head")
+                    local orig = h and h:GetAttribute("kawazHeadSize")
+                    if orig then h.Size = orig; h.Transparency = h:GetAttribute("kawazHeadTrans") or 0; h:SetAttribute("kawazHeadSize", nil); h:SetAttribute("kawazHeadTrans", nil) end
+                end
+            end
+        end
+
+        for p, o in pairs(EC) do
+            local pc = p.Character; local hp = pc and pc:FindFirstChild("HumanoidRootPart"); local hd = pc and pc:FindFirstChild("Head"); local hu = pc and pc:FindFirstChild("Humanoid")
+            local rl = "Unknown"; local cl = Color3.fromRGB(48,255,106)
+            if CM == "MM2" then rl = GR(p); cl = RCL[rl] or RCL.Unknown end
+            if ES.Chams and pc then
+                if not o.HL then o.HL = Instance.new("Highlight"); o.HL.Adornee = pc; o.HL.Parent = pc end
+                o.HL.FillColor = cl; o.HL.OutlineColor = cl; o.HL.Enabled = true
+            elseif o.HL then o.HL.Enabled = false end
+
+            if ES.ESP and pc and hp and hd and hu and hu.Health > 0 then
+                local sp = W2S(hd.Position + Vector3.new(0, .5, 0))
+                local fp = W2S(hp.Position - Vector3.new(0, 2.5, 0))
+                if sp and fp then
+                    local hh = math.abs(fp.Y - sp.Y); local w = hh * .5
+                    o.Box.Visible = ES.Box; o.Box.Size = UDim2.fromOffset(w, hh); o.Box.Position = UDim2.fromOffset(sp.X - w/2, sp.Y)
+                    o.Stroke.Color = cl
+                    o.Name.Visible = ES.Name or ES.Health or ES.Dist
+                    if o.Name.Visible then
+                        local s = ""
+                        if ES.Name then s = s .. p.Name end
+                        if CM == "MM2" and rl ~= "Unknown" then s = s .. " [" .. rl .. "]" end
+                        o.Name.TextColor3 = cl
+                        if ES.Health then s = s .. " [" .. math.floor(hu.Health) .. "HP]" end
+                        if ES.Dist then
+                            local lhrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+                            if lhrp then s = s .. " (" .. math.floor((lhrp.Position - hp.Position).Magnitude) .. "m)" end
+                        end
+                        o.Name.Text = s
+                    end
+                else
+                    o.Box.Visible = false; o.Name.Visible = false
+                end
+            else
+                if o.Box then o.Box.Visible = false end
+                if o.Name then o.Name.Visible = false end
+            end
+        end
+
+        FTM = FTM + dt; FCN = FCN + 1
+        if FTM >= 1 then FLB.Text = "FPS: " .. FCN; FCN = 0; FTM = 0 end
+        FLB.Visible = FC.Enabled
+        PTC = PTC + 1
+        if PTC >= 60 then PTC = 0; PLB.Text = "Ping: " .. math.floor(LP:GetNetworkPing() * 1000) .. "ms" end
+        PLB.Visible = PD.Enabled
+    end)
+
+    -- ВКЛАДКИ
+    local BT = MT("Binds", "rbxassetid://10709799771", "#FF00FF")
+    if BT then pcall(function() BT:Paragraph({Title="Клавиши:", Content="Мобильный интерфейс адаптирован под Delta."}) end) end
+
+    local FT3 = MT("Autofarm", "rbxassetid://10709799771", "#FFD700")
+    if FT3 then
+        pcall(function() FT3:Toggle({Title="AutoFarm Coins/Candy", Default=false, Callback=function(v) FM.Enabled = v end}) end)
+        pcall(function() FT3:Toggle({Title="Режим MoveTo", Default=false, Callback=function(v) FM.UseMoveTo = v end}) end)
+        pcall(function() FT3:Dropdown({Title="Скорость", Values={"8","10","12","14","16","18","20"}, Value="12", Callback=function(v) FM.Speed = tonumber(v) or 12 end}) end)
+        pcall(function() FT3:Dropdown({Title="Дистанция Murderer", Values={"10","15","25","30","40","60"}, Value="25", Callback=function(v) FM.SafeDistance = tonumber(v) or 25 end}) end)
+    end
+
+    local MT2 = MT("Main", "rbxassetid://10709799771", "#83889E")
+    if MT2 then
+        pcall(function() MT2:Button({Title="[MAIN]", Callback=function() CM = "Main"; Notify("Режим", "Переключен на Main", 2) end}) end)
+        pcall(function() MT2:Button({Title="[MM2]", Callback=function() CM = "MM2"; Notify("Режим", "Переключен на MM2", 2) end}) end)
+        pcall(function() MT2:Toggle({Title="AntiMurder Flee", Default=false, Callback=function(v) AM.Enabled = v end}) end)
+        pcall(function() MT2:Dropdown({Title="Дистанция", Values={"20","30","40","50","60","80"}, Value="40", Callback=function(v) AM.Distance = tonumber(v) or 40 end}) end)
+        pcall(function() MT2:Button({Title="Rejoin Server", Callback=function() pcall(function() TPS:TeleportToPlaceInstance(game.PlaceId, game.JobId) end) end}) end)
+    end
+
+    local PT2 = MT("Player", "rbxassetid://10709799771", "#00FF00")
+    if PT2 then
+        pcall(function() PT2:Toggle({Title="NoClip", Default=false, Callback=function(v) NC.Enabled = v end}) end)
+        pcall(function() PT2:Toggle({Title="Fly", Default=false, Callback=function(v) FL.Enabled = v end}) end)
+        pcall(function() PT2:Toggle({Title="BunnyHop", Default=false, Callback=function(v) BH.Enabled = v end}) end)
+        pcall(function() PT2:Toggle({Title="SpinBot", Default=false, Callback=function(v) SPN.Enabled = v end}) end)
+        pcall(function() PT2:Dropdown({Title="Скорость SpinBot", Values={"20","50","100","200"}, Value="50", Callback=function(v) SPN.Speed = tonumber(v) or 50 end}) end)
+        pcall(function() PT2:Toggle({Title="Anti-AFK", Default=false, Callback=function(v) AFK.Enabled = v end}) end)
+        pcall(function() PT2:Dropdown({Title="WalkSpeed", Values={"16","20","30","50","75","100","150","200"}, Value="50", Callback=function(v) SP.Enabled = true; SP.Speed = tonumber(v) or 50 end}) end)
+        pcall(function() PT2:Dropdown({Title="JumpPower", Values={"50","75","100","150","200","300"}, Value="50", Callback=function(v) JP.Enabled = true; JP.Power = tonumber(v) or 50 end}) end)
+        pcall(function() PT2:Toggle({Title="Anti-Fling", Default=false, Callback=function(v) AFL.Enabled = v end}) end)
+        pcall(function() PT2:Toggle({Title="Auto Respawn", Default=false, Callback=function(v) AR.Enabled = v end}) end)
+        pcall(function() PT2:Toggle({Title="Infinite Jump", Default=false, Callback=function(v) IJ.Enabled = v end}) end)
+        pcall(function() PT2:Toggle({Title="Anti-Void", Default=false, Callback=function(v) AV.Enabled = v end}) end)
+        pcall(function() PT2:Toggle({Title="AntiAim", Default=false, Callback=function(v) AIM.Enabled = v; if v then STAA() else SAA() end end}) end)
+    end
+
+    local CT = MT("Combat", "rbxassetid://10709799771", "#10C550")
+    if CT then
+        pcall(function() CT:Toggle({Title="Mobile Aimbot", Default=false, Callback=function(s) AB.Enabled = s; AIMB.Visible = s; if not s then AA = false end end}) end)
+        pcall(function() CT:Toggle({Title="TriggerBot", Default=false, Callback=function(v) TB.Enabled = v end}) end)
+        pcall(function() CT:Toggle({Title="AutoClicker", Default=false, Callback=function(v) ACK.Enabled = v end}) end)
+        pcall(function() CT:Toggle({Title="Visible Check", Default=true, Callback=function(s) AB.VisibleCheck = s end}) end)
+        pcall(function() CT:Toggle({Title="Показывать FOV", Default=false, Callback=function(s) AB.ShowFOV = s; if not s then FF.Visible = false end end}) end)
+        pcall(function() CT:Dropdown({Title="Цель", Values={"Head","Torso"}, Value="Head", Callback=function(v) AB.TargetPart = v end}) end)
+        pcall(function() CT:Toggle({Title="Hitbox Expander", Default=false, Callback=function(v) AB.HitboxEnabled = v end}) end)
+        pcall(function() CT:Dropdown({Title="Hitbox Size", Values={"2","3","4","5","6","8","10","12","15"}, Value="4", Callback=function(v) AB.HitboxSize = tonumber(v) or 4 end}) end)
+        pcall(function() CT:Toggle({Title="Killaura", Default=false, Callback=function(v) KA.Enabled = v end}) end)
+        pcall(function() CT:Toggle({Title="Auto Parry", Default=false, Callback=function(v) AP.Enabled = v end}) end)
+    end
+
+    local VT = MT("Visuals", "rbxassetid://10709799771", "#83889E")
+    if VT then
+        pcall(function() VT:Toggle({Title="Enable ESP", Default=false, Callback=function(v) ES.ESP = v end}) end)
+        pcall(function() VT:Toggle({Title="ESP Value / Coins", Default=false, Callback=function(v) VE.Enabled = v end}) end)
+        pcall(function() VT:Toggle({Title="Gun ESP (MM2)", Default=false, Callback=function(v) GE.Enabled = v end}) end)
+        pcall(function() VT:Toggle({Title="Box ESP", Default=false, Callback=function(v) ES.Box = v end}) end)
+        pcall(function() VT:Toggle({Title="Name ESP", Default=false, Callback=function(v) ES.Name = v end}) end)
+        pcall(function() VT:Toggle({Title="Health ESP", Default=false, Callback=function(v) ES.Health = v end}) end)
+        pcall(function() VT:Toggle({Title="Distance ESP", Default=false, Callback=function(v) ES.Dist = v end}) end)
+        pcall(function() VT:Toggle({Title="Chams", Default=false, Callback=function(v) ES.Chams = v end}) end)
+        pcall(function() VT:Toggle({Title="FPS Counter", Default=false, Callback=function(v) FC.Enabled = v end}) end)
+        pcall(function() VT:Toggle({Title="Ping Display", Default=false, Callback=function(v) PD.Enabled = v end}) end)
+        pcall(function() VT:Toggle({Title="Fullbright", Default=false, Callback=function(v) LG.Brightness = v and 2 or 1; LG.GlobalShadows = not v end}) end)
+        pcall(function() VT:Toggle({Title="No Fog", Default=false, Callback=function(v) NF.Enabled = v end}) end)
+        pcall(function() VT:Button({Title="Ночь", Callback=function() LG.ClockTime = 0 end}) end)
+        pcall(function() VT:Button({Title="День", Callback=function() LG.ClockTime = 14 end}) end)
+    end
+
+    local WMT = MT("Watermark", "rbxassetid://10709799771", "#00AAFF")
+    if WMT then
+        pcall(function() WMT:Button({Title="Style 1: Classic", Callback=function() WM.Style = 1 end}) end)
+        pcall(function() WMT:Button({Title="Style 2: Minimal", Callback=function() WM.Style = 2 end}) end)
+        pcall(function() WMT:Button({Title="Style 3: Fancy", Callback=function() WM.Style = 3 end}) end)
+        pcall(function() WMT:Button({Title="Style 4: Hidden", Callback=function() WM.Style = 4 end}) end)
+    end
+
+    local ST = MT("Settings", "rbxassetid://10709799771", "#83889E")
+    if ST then
+        pcall(function() ST:Button({Title="Выгрузить UI", Callback=function() for _, g in ipairs(CG:GetChildren()) do if g.Name:lower():find("kawaz") then g:Destroy() end end end}) end)
+        pcall(function() ST:Paragraph({Title="Профиль", Content="Ник: " .. LP.Name .. "\nUserID: " .. LP.UserId}) end)
+    end
+end
+
+local function TL()
+    local c = KB.Text:gsub("^%s+", ""):gsub("%s+$", ""):lower()
+    local v = IK(c)
+    if not v then SL.Text = "неверный или просроченный invite code"; Notify("Ошибка", "Неверный код доступа!", 3); return end
+    CKC = c; SK(); KF.Visible = false; WB.Visible = true; Notify("Успех", "Добро пожаловать в kawaz1k.win!", 3)
+    if not WIN then CMUI() end
+end
+
+LB.MouseButton1Click:Connect(TL)
+KB.FocusLost:Connect(function(e) if e then TL() end end)
+L("kawaz1k.win v96 (iOS): успешно запущено.")
